@@ -37,3 +37,13 @@ form {
     border-radius: 5px;
     text-align: left;
 }
+
+.content {
+    font-size: 100%;
+    width: 30%;
+    margin: 0 auto;
+    background: orchid;
+    padding: 20px;
+    border: 1px solid black;
+    border-radius: 0 0 10px 10px;
+}

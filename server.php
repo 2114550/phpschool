@@ -1,32 +1,12 @@
-<?php
-$gebruiker = "";
-$email = "";
-$errors = array();
+<?php 
 
-$db = mysqli_connect('localhost', 'root', '', 'loginsystem');
+define('DB_SERVER', 'localhost');
+define('DB_USERNAME', 'root');
+define('DB_PASSWORD', '');
+define('DB_NAME', 'loginsystem');
 
-if (isset($_POST['registreer'])) {
-	$gebruiker = $_POST['gebruiker'];
-	$email = $_POST['email'];
-	$pass_1 = $_POST['pass_1'];
-	$pass_2 = $_POST['pass_2'];
+$link = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 
-	if(empty($gebruiker)) {
-		array_push($errors, "Inlognaam is verplicht");
-	}if(empty($email)) {
-		array_push($errors, "E-mail is verplicht");
-	}if(empty($pass_1)) {
-		array_push($errors, "Wachtwoord is verplicht");
-	}
-
-	if ($pass_1 != $pass_2) {
-		array_push($errors, "De wachtwoorden zijn niet hetzelfde");
-	}
-
-	if (count($errors) == 0) {
-		$password = md5($pass_1);
-		$sql = "INSERT INTO users (gebruiker, email, pass) 
-		VALUES ('$gebruiker', '$email', '$password')";
-		mysqli_query($db, $sql);
-	}
-};
+if($link === false) {
+	die("Error, cannot connect" . mysqli_connect_error());
+}

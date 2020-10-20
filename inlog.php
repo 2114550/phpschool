@@ -1,22 +1,124 @@
+<?php
+// Initialize the session
+session_start();
+
+// Check if the user is already logged in, if yes then redirect him to welcome page
+if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true){
+    header("location: ingelogd.php");
+    exit;
+}
+
+// Include config file
+require_once "server.php";
+
+// Define variables and initialize with empty values
+$email = $password = "";
+$email_err = $password_err = "";
+
+// Processing form data when form is submitted
+if($_SERVER["REQUEST_METHOD"] == "POST"){
+
+    // Check if username is empty
+    if(empty(trim($_POST["emailUsers"]))){
+        $email_err = "Please enter username.";
+    } else{
+        $email = trim($_POST["emailUsers"]);
+    }
+
+    // Check if password is empty
+    if(empty(trim($_POST["pwsUsers"]))){
+        $password_err = "Please enter your password.";
+    } else{
+        $password = trim($_POST["pwsUsers"]);
+    }
+
+    // Validate credentials
+    if(empty($email_err) && empty($password_err)){
+        // Prepare a select statement
+		$sql = "SELECT idUsers, emailUsers, pwsUsers FROM users WHERE emailUsers = ?";
+
+        if($stmt = mysqli_prepare($link, $sql)){
+            // Bind variables to the prepared statement as parameters
+            mysqli_stmt_bind_param($stmt, "s", $param_email);
+
+            // Set parameters
+            $param_email = $email;
+
+            // Attempt to execute the prepared statement
+            if(mysqli_stmt_execute($stmt)){
+                // Store result
+                mysqli_stmt_store_result($stmt);
+
+                // Check if username exists, if yes then verify password
+                if(mysqli_stmt_num_rows($stmt) == 1){
+                    // Bind result variables
+					mysqli_stmt_bind_result($stmt, $idUsers, $emailUsers, $pwsHashed);
+                    if(mysqli_stmt_fetch($stmt)){
+						if (password_verify($password, $pwsHashed)) {
+                            // Password is correct, so start a new session
+                            session_start();
+
+                            // Store data in session variables
+							$_SESSION["loggedin"] = true;
+							$_SESSION["idUsers"] = $idUsers;
+							$_SESSION["emailUsers"] = $emailUsers;
+
+                            // Redirect user to welcome page
+                            header("location: ingelogd.php");
+                        } else{
+                            // Display an error message if password is not valid
+                            $password_err = "The password you entered was not valid.";
+                        }
+                    }
+                } else{
+                    // Display an error message if username doesn't exist
+                    $email_err = "No account found with that username.";
+                }
+            } else{
+                echo "Oops! Something went wrong. Please try again later.";
+            }
+        }
+
+        // Close statement
+            mysqli_stmt_close($stmt);
+    }
+
+    // Close connection
+    mysqli_close($link);
+}
+?>
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.css">
+    <style type="text/css">
+        body{ font: 14px sans-serif; }
+        .wrapper{ width: 350px; padding: 20px; }
+    </style>
 </head>
 <body>
-	<div class="header">
-        <h2>Log in</h2>
-    </div>
-		<form action="inlog.php" method="POST">
-			<label for="email">E-mail</label> <br>
-				<input type="text" name="email"/>
-			<label for="pass">Wachtwoord</label>
-				<input type="password" name="pass_1"/>
-				<input type="submit" name="login"/>
-				<p>
-					Heb je nog geen account? <a href="index.php"> Registreer!</a>
-				</p>
-		</form>
-	
+<div class="wrapper">
+    <h2>Login</h2>
+    <p>Please fill in your credentials to login.</p>
+    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+        <div class="form-group <?php echo (!empty($email_err)) ? 'has-error' : ''; ?>">
+            <label>Username</label>
+            <input type="text" name="emailUsers" class="form-control" value="<?php echo $email; ?>">
+            <span class="help-block"><?php echo $email_err; ?></span>
+        </div>
+        <div class="form-group <?php echo (!empty($password_err)) ? 'has-error' : ''; ?>">
+            <label>Password</label>
+            <input type="password" name="pwsUsers" class="form-control">
+            <span class="help-block"><?php echo $password_err; ?></span>
+        </div>
+        <div class="form-group">
+            <input type="submit" class="btn btn-primary" value="Login">
+        </div>
+    </form>
+</div>
 </body>
 </html>
